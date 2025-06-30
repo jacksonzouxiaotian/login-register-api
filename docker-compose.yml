@@ -7,6 +7,17 @@ x-default-volumes: &default_volumes
     - ./dev.db:/tmp/dev.db
 
 services:
+  db:
+    image: postgres:14
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - pgdata:/var/lib/postgresql/data
   flask-prod:
     build:
       context: .
@@ -21,6 +32,10 @@ services:
       LOG_LEVEL: info
       GUNICORN_WORKERS: 4
       PORT: 5000  # gunicorn 使用这个变量
+      DATABASE_URL: postgresql://myuser:mypassword@db:5432/mydb
+      SECRET_KEY: your-secret-key
+    depends_on:
+      - db
     <<: *default_volumes
 
   flask-manage:
@@ -35,6 +50,12 @@ services:
       FLASK_ENV: development
       FLASK_DEBUG: 1
       PORT: 5000
+      DATABASE_URL: postgresql://myuser:mypassword@db:5432/mydb
+      SECRET_KEY: your-secret-key
     stdin_open: true
     tty: true
+    depends_on:
+      - db
     <<: *default_volumes
+volumes:
+  pgdata:
