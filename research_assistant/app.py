@@ -16,7 +16,9 @@ from research_assistant.extensions import (
     flask_static_digest,
     login_manager,
     migrate,
+    mail,
 )
+from research_assistant.public.views import blueprint
 
 
 def create_app(config_object="research_assistant.settings"):
@@ -27,6 +29,11 @@ def create_app(config_object="research_assistant.settings"):
     app = Flask(__name__.split(".")[0])
     app.config.from_object(config_object)
     register_extensions(app)
+    csrf_protect.exempt(blueprint)
+    mail.init_app(app)
+    if not app.config.get("TESTING", False):
+        with app.app_context():
+            db.create_all()
     register_blueprints(app)
     register_errorhandlers(app)
     register_shellcontext(app)
@@ -94,3 +101,4 @@ def configure_logger(app):
     handler = logging.StreamHandler(sys.stdout)
     if not app.logger.handlers:
         app.logger.addHandler(handler)
+app = create_app()

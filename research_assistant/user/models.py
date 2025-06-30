@@ -63,3 +63,13 @@ class User(UserMixin, PkModel):
     def __repr__(self):
         """Represent instance as a unique string."""
         return f"<User({self.username!r})>"
+class EmailCaptcha(db.Model):
+    __tablename__ = 'email_captcha'
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    captcha = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=dt.datetime.utcnow)
+
+    def __repr__(self):
+        return f'<EmailCaptcha {self.email} – {self.captcha}>'
