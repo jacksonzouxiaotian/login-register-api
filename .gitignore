@@ -51,8 +51,5 @@ env/
 # webpack-built files
 /research_assistant/static/build/
 
-# Configuration
-.env
-
 # Development database
 *.db
