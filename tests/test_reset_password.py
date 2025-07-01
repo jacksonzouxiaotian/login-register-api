@@ -9,11 +9,6 @@ from research_assistant.extensions import db, bcrypt
 
 @pytest.fixture
 def client(app):
-    """
-    创建一个带测试数据库的 test_client：
-      - 在 app_context 里创建所有表
-      - 测试结束后清空 session 并 drop_all
-    """
     with app.app_context():
         db.create_all()
         client = app.test_client()
@@ -23,8 +18,6 @@ def client(app):
 
 
 def test_reset_password_success(client):
-    """密码重置成功的场景"""
-    # 1) 先在测试库中创建一个用户
     User.create(
         username="alice",
         email="alice@example.com",
@@ -33,12 +26,10 @@ def test_reset_password_success(client):
     )
     db.session.commit()
 
-    # 2) 再插入一条对应的验证码
     cap = EmailCaptcha(email="alice@example.com", captcha="654321")
     db.session.add(cap)
     db.session.commit()
 
-    # 3) 调用重置密码接口
     resp = client.post(
         "/password/reset/",
         data=json.dumps({
@@ -72,14 +63,11 @@ def test_reset_password_missing_params(client, payload, status, substr):
     )
     assert resp.status_code == status
     body = resp.get_json()
-    # 接口返回字段是 "message"
     assert "message" in body
     assert substr.lower() in body["message"].lower()
 
 
 def test_reset_password_invalid_captcha(client):
-    """验证码不匹配（或过期）时返回 400 + 错误提示。"""
-    # 1) 仅创建用户，不插入对应 captcha
     User.create(
         username="bob",
         email="bob@example.com",
@@ -88,7 +76,6 @@ def test_reset_password_invalid_captcha(client):
     )
     db.session.commit()
 
-    # 2) 用不存在的验证码调用
     resp = client.post(
         "/password/reset/",
         json={
@@ -99,17 +86,14 @@ def test_reset_password_invalid_captcha(client):
     )
     assert resp.status_code == 400
     body = resp.get_json()
-    assert "invalid" in body["message"].lower() or "验证码错误" in body["message"]
+    assert "invalid" in body["message"].lower() or "Verification code error" in body["message"]
 
 
 def test_reset_password_email_not_registered(client):
-    """验证码正确，但邮箱未注册时返回 404 + 未注册提示。"""
-    # 1) 插入一条验证码到数据库（邮箱不在 users 表中）
     cap = EmailCaptcha(email="nobody@example.com", captcha="123123")
     db.session.add(cap)
     db.session.commit()
 
-    # 2) 调用接口
     resp = client.post(
         "/password/reset/",
         json={
@@ -120,4 +104,4 @@ def test_reset_password_email_not_registered(client):
     )
     assert resp.status_code == 404
     body = resp.get_json()
-    assert "not registered" in body["message"].lower() or "未注册" in body["message"]
+    assert "not registered" in body["message"].lower() or "Not registered" in body["message"]
